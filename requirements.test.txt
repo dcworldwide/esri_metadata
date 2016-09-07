@@ -1,0 +1,2 @@
+pathlib2==2.1.0
+pytest==2.9.0

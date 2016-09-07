@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+
+# generated file
+/pie.bat
+# pytest generated dir
+/.cache/
+# standard generated dirs
+/venvs/
+/build/
+/dist/
+/esri_metadata.egg-info/
