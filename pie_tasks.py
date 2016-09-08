@@ -9,7 +9,7 @@ def setup():
 
 @task
 def createVenvs():
-    venv(r'venvs\test').create()
+    venv(r'venvs\test').create('--system-site-packages')
 
 
 @task

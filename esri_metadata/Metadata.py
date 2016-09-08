@@ -3,6 +3,7 @@ Metadata class
 """
 import os
 import datetime
+import tempfile
 
 from xml.dom import minidom
 from xml.dom import Node
@@ -196,8 +197,8 @@ class Contact(Container):
 
 class Metadata(Container):
     def __init__(self,datasetPath):
-        if os.path.isfile(datasetPath):
-            self.load_from_xml(datasetPath)
+        self.datasetPath=datasetPath
+        self.load(datasetPath)
         self.set_name('metadata')
         self.bind()
         super(Metadata,self).__init__()
@@ -222,13 +223,38 @@ class Metadata(Container):
         }
 
 
+    def load(self,path):
+        if os.path.isfile(path):
+            tmpPath=path
+        else:
+            with tempfile.NamedTemporaryFile(mode='w',suffix='.xml',delete=False) as fout:
+                fout.write('<metadata />')
+                tmpPath=fout.name
+            import arcpy
+            arcpy.MetadataImporter_conversion(path,tmpPath)
+        self.load_from_xml(tmpPath)
+
     def load_from_xml(self,path):
         self.doc=minidom.parse(path)
+
+
+    def save(self,path=None):
+        if path is None: path=self.datasetPath
+        if os.path.isfile(path):
+            tmpPath=path
+        else:
+            with tempfile.NamedTemporaryFile(mode='w',suffix='.xml',delete=False) as fout:
+                tmpPath=fout.name
+        self.save_to_xml(tmpPath)
+        if not os.path.isfile(path):
+            import arcpy
+            arcpy.MetadataImporter_conversion(tmpPath,path)
+
+    def save_to_xml(self,path):
+        with open(path,'w') as fout: self.doc.writexml(fout)
 
 
     def bind(self):
         """Special case binding"""
         self.element=self.doc.documentElement
         self.parentElementWrapper=self
-
-
