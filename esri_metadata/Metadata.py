@@ -1,6 +1,9 @@
 """
 Metadata class
 """
+#         import traceback
+#         print('\n'.join(traceback.format_stack()))
+#         print(self.is_bound)
 import os
 import datetime
 import tempfile
@@ -47,12 +50,26 @@ class ElementWrapper(Wrapper):
     def is_missing(self):
         return self.is_bound and self.element is None
 
+    def delete(self):
+        self.element.parentNode.removeChild(self.element)
+        self.element.unlink()
+        self.element=None
+
 
 class AttributeWrapper(Wrapper):
     def bind(self,parentElementWrapper):
         super(AttributeWrapper,self).bind(parentElementWrapper)
         if not self.parentElementWrapper.is_missing:
             self.attribute=self.parentElementWrapper.element.getAttributeNode(self.name)
+
+    @property
+    def is_missing(self):
+        return self.is_bound and not self.hasAttribute(self.name)
+
+    def create(self):
+        if not self.is_bound: raise Exception('Cannot create on unbound Element')
+        if self.is_missing:
+            self.parentElementWrapper.element.setAttribute(self.name,'')
 
 
 class List(Wrapper):
@@ -67,6 +84,10 @@ class List(Wrapper):
                 if e.nodeType==Node.ELEMENT_NODE and e.localName==self.name:
                     self.elements.append(e)
 
+
+    def __len__(self):
+        return len(self.elements)
+
     def __getitem__(self,i):
         e=self.elements[i]
         ew=self.itemType()
@@ -75,6 +96,20 @@ class List(Wrapper):
         ew.element=e
         return ew
 
+    def __delitem__(self,i):
+        e=self.elements[i]
+        e.parentNode.removeChild(e)
+        e.unlink()
+        del self.elements[i]
+
+    def append(self,elementWrapper=None):
+        if not self.is_bound: raise Exception('Cannot create on unbound Element')
+        if self.parentElementWrapper.is_missing: self.parentElementWrapper.create()
+        e=self.parentElementWrapper.element.ownerDocument.createElement(self.name)
+        self.parentElementWrapper.element.appendChild(e)
+        self.elements.append(e)
+        return self[len(self.elements)-1]
+
 
 class Container(ElementWrapper):
     def __init__(self,children=None):
@@ -82,19 +117,25 @@ class Container(ElementWrapper):
         for n,w in self.mapping.items():
             w.set_name(n)
 
+
     def get_children(self):
         return {}
 
+
     def __getattr__(self,name):
-        """If a physical attribute doesn't exist, check in self.mapping and bind the instance.
-        """
+        """If a physical attribute doesn't exist, check in self.mapping and bind the instance."""
         w=self.mapping.get(name,None)
-        if w:
+        if w is not None:
             w.set_name(name)
             w.bind(self)
             return w
-        raise AttributeError('{} not found in {}'.format(name,self.name))
+        else:
+            raise AttributeError('{} not found in {}'.format(name,self.name))
 
+
+    def __delattr__(self,name):
+        w=getattr(self,name)
+        w.delete()
 
 
 class SingleValue(object):
@@ -117,7 +158,7 @@ class ScalarValue(ElementWrapper,SingleValue):
 
     @value.setter
     def value(self,v):
-        # self.parentElementWrapper.create()
+        self.create()
         e=self.element.ownerDocument.createTextNode(self.format_value(v))
         for n in self.element.childNodes:
             self.element.removeChild(n)
@@ -146,6 +187,12 @@ class AttributeScalarValue(AttributeWrapper,SingleValue):
     @property
     def value(self):
         return self.parse_value(self.attribute.value)
+
+    @value.setter
+    def value(self,v):
+        self.parentElementWrapper.create()
+        e=self.parentElementWrapper.element.setAttribute(self.name,self.format_value(v))
+
 
 class AttributeStringValue(AttributeScalarValue):
     def parse_value(self,v):

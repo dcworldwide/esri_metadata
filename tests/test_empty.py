@@ -16,6 +16,5 @@ def test_missing_element(md):
     assert md.dataIdInfo.is_missing
 
 def test_add_missing_element(md):
-    md.dataIdInfo.idAbs.create()
     md.dataIdInfo.idAbs.value='Test'
     assert md.dataIdInfo.idAbs.value=='Test'
