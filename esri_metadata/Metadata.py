@@ -1,15 +1,12 @@
 """
 Metadata class
 """
-#         import traceback
-#         print('\n'.join(traceback.format_stack()))
-#         print(self.is_bound)
 import os
 import datetime
 import tempfile
+import copy
 
-from xml.dom import minidom
-from xml.dom import Node
+import xml.etree.ElementTree as ET
 
 
 class Wrapper(object):
@@ -30,8 +27,8 @@ class ElementWrapper(Wrapper):
         super(ElementWrapper,self).bind(parentElementWrapper)
         self.element=None
         if not self.parentElementWrapper.is_missing:
-            for e in self.parentElementWrapper.element.childNodes:
-                if e.nodeType==Node.ELEMENT_NODE and e.localName==self.name:
+            for e in self.parentElementWrapper.element:
+                if e.tag==self.name:
                     if self.element is not None:
                         raise Exception('Multiple elements found when expecting one')
                     self.element=e
@@ -46,42 +43,37 @@ class ElementWrapper(Wrapper):
         if not self.is_bound: raise Exception('Cannot create on unbound Element')
         if self.is_missing:
             self.parentElementWrapper.create()
-            e=self.parentElementWrapper.element.ownerDocument.createElement(self.name)
-            self.parentElementWrapper.element.appendChild(e)
+            e=ET.SubElement(self.parentElementWrapper.element,self.name)
             self.element=e
 
 
     def set(self,elementWrapper):
-        parentNode=self.element.parentNode
+        parentNode=self.parentElementWrapper.element
         self.delete()
-        e=elementWrapper.element.cloneNode(deep=True)
-        e.localName=self.name
-        parentNode.appendChild(e)
-        print(parentNode.childNodes)
-        print(e)
+        e=copy.deepcopy(elementWrapper.element)
+        e.tag=self.name
+        parentNode.append(e)
         self.element=e
 
 
     def delete(self):
-        self.element.parentNode.removeChild(self.element)
-        self.element.unlink()
+        self.parentElementWrapper.element.remove(self.element)
         self.element=None
 
 
 class AttributeWrapper(Wrapper):
     def bind(self,parentElementWrapper):
         super(AttributeWrapper,self).bind(parentElementWrapper)
-        if not self.parentElementWrapper.is_missing:
-            self.attribute=self.parentElementWrapper.element.getAttributeNode(self.name)
 
     @property
     def is_missing(self):
-        return self.is_bound and not self.hasAttribute(self.name)
+        return self.is_bound and (self.parentElementWrapper.is_missing or self.name not in self.parentElementWrapper.element.keys())
 
     def create(self):
         if not self.is_bound: raise Exception('Cannot create on unbound Element')
         if self.is_missing:
-            self.parentElementWrapper.element.setAttribute(self.name,'')
+            self.parentElementWrapper.create()
+            self.parentElementWrapper.element.set(self.name,'')
 
 
 class List(Wrapper):
@@ -92,8 +84,8 @@ class List(Wrapper):
         super(List,self).bind(parentElementWrapper)
         self.elements=[]
         if not self.parentElementWrapper.is_missing:
-            for e in self.parentElementWrapper.element.childNodes:
-                if e.nodeType==Node.ELEMENT_NODE and e.localName==self.name:
+            for e in self.parentElementWrapper.element:
+                if e.tag==self.name:
                     self.elements.append(e)
 
 
@@ -110,8 +102,7 @@ class List(Wrapper):
 
     def __delitem__(self,i):
         e=self.elements[i]
-        e.parentNode.removeChild(e)
-        e.unlink()
+        self.parentElementWrapper.element.remove(e)
         del self.elements[i]
 
     def append(self,elementWrapper=None):
@@ -119,12 +110,12 @@ class List(Wrapper):
         if self.parentElementWrapper.is_missing: self.parentElementWrapper.create()
         if elementWrapper is not None:
             if not isinstance(elementWrapper,self.itemType): raise TypeError('Cannot assign {} where {} is expected'.format(elementWrapper.__class__.__name__,self.itemType.__name__))
-            e=elementWrapper.element.cloneNode(deep=True)
+            e=copy.deepcopy(elementWrapper.element)
             # set the name of the element (it might have been called something else where it came from)
-            e.localName=self.name
+            e.tag=self.name
+            self.parentElementWrapper.element.append(e)
         else:
-            e=self.parentElementWrapper.element.ownerDocument.createElement(self.name)
-        self.parentElementWrapper.element.appendChild(e)
+            e=ET.SubElement(self.parentElementWrapper.element,self.name)
         self.elements.append(e)
         return self[len(self.elements)-1]
 
@@ -167,21 +158,20 @@ class SingleValue(object):
 class ScalarValue(ElementWrapper,SingleValue):
     @property
     def value(self):
-        if self.element is None or len(self.element.childNodes)==0:
+        if self.element is None:
             return None
-        elif len(self.element.childNodes)>1:
+        elif len(self.element)>0:
             raise Exception('Greater than one child node for type: {}'.format(self.__class__.__name__))
-        v=self.element.childNodes[0]
-        return self.parse_value(v.data)
+        v=self.element.text
+        return self.parse_value(v)
 
     @value.setter
     def value(self,v):
         self.create()
-        e=self.element.ownerDocument.createTextNode(self.format_value(v))
-        for n in self.element.childNodes:
-            self.element.removeChild(n)
-            n.unlink()
-        self.element.appendChild(e)
+        self.element.text=self.format_value(v)
+        # just remove any child elements in case, because this is supposed to be a scalar value
+        for n in self.element:
+            self.element.remove(n)
 
 
 class StringValue(ScalarValue):
@@ -204,12 +194,12 @@ class DateTimeValue(ScalarValue):
 class AttributeScalarValue(AttributeWrapper,SingleValue):
     @property
     def value(self):
-        return self.parse_value(self.attribute.value)
+        return self.parse_value(self.parentElementWrapper.element.get(self.name))
 
     @value.setter
     def value(self,v):
         self.parentElementWrapper.create()
-        e=self.parentElementWrapper.element.setAttribute(self.name,self.format_value(v))
+        e=self.parentElementWrapper.element.set(self.name,self.format_value(v))
 
 
 class AttributeStringValue(AttributeScalarValue):
@@ -300,7 +290,7 @@ class Metadata(Container):
         self.load_from_xml(tmpPath)
 
     def load_from_xml(self,path):
-        self.doc=minidom.parse(path)
+        self.tree=ET.parse(path)
 
 
     def save(self,path=None):
@@ -316,10 +306,10 @@ class Metadata(Container):
             arcpy.MetadataImporter_conversion(tmpPath,path)
 
     def save_to_xml(self,path):
-        with open(path,'w') as fout: self.doc.writexml(fout)
+        self.tree.write(path)
 
 
     def bind(self):
         """Special case binding"""
-        self.element=self.doc.documentElement
+        self.element=self.tree.getroot()
         self.parentElementWrapper=self
