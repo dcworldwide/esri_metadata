@@ -37,6 +37,11 @@ class ElementWrapper(Wrapper):
                     self.element=e
 
 
+    @property
+    def is_missing(self):
+        return self.is_bound and self.element is None
+
+
     def create(self):
         if not self.is_bound: raise Exception('Cannot create on unbound Element')
         if self.is_missing:
@@ -46,9 +51,16 @@ class ElementWrapper(Wrapper):
             self.element=e
 
 
-    @property
-    def is_missing(self):
-        return self.is_bound and self.element is None
+    def set(self,elementWrapper):
+        parentNode=self.element.parentNode
+        self.delete()
+        e=elementWrapper.element.cloneNode(deep=True)
+        e.localName=self.name
+        parentNode.appendChild(e)
+        print(parentNode.childNodes)
+        print(e)
+        self.element=e
+
 
     def delete(self):
         self.element.parentNode.removeChild(self.element)
@@ -105,7 +117,13 @@ class List(Wrapper):
     def append(self,elementWrapper=None):
         if not self.is_bound: raise Exception('Cannot create on unbound Element')
         if self.parentElementWrapper.is_missing: self.parentElementWrapper.create()
-        e=self.parentElementWrapper.element.ownerDocument.createElement(self.name)
+        if elementWrapper is not None:
+            if not isinstance(elementWrapper,self.itemType): raise TypeError('Cannot assign {} where {} is expected'.format(elementWrapper.__class__.__name__,self.itemType.__name__))
+            e=elementWrapper.element.cloneNode(deep=True)
+            # set the name of the element (it might have been called something else where it came from)
+            e.localName=self.name
+        else:
+            e=self.parentElementWrapper.element.ownerDocument.createElement(self.name)
         self.parentElementWrapper.element.appendChild(e)
         self.elements.append(e)
         return self[len(self.elements)-1]
@@ -287,7 +305,7 @@ class Metadata(Container):
 
     def save(self,path=None):
         if path is None: path=self.datasetPath
-        if os.path.isfile(path):
+        if os.path.isfile(path) or (os.path.isdir(os.path.dirname(path)) and path.endswith('.xml')):
             tmpPath=path
         else:
             with tempfile.NamedTemporaryFile(mode='w',suffix='.xml',delete=False) as fout:

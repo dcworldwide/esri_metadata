@@ -89,3 +89,23 @@ def test_delete_container(md):
     # then restore for subsequent tests
     md.dataIdInfo.idCitation.resTitle.value='Title'
     md.save(md.datasetPath)
+
+
+def test_append_container_to_list(md):
+    md.dataIdInfo.idCitation.citRespParty.append(md.dataIdInfo.idPoC)
+    assert md.dataIdInfo.idCitation.citRespParty[2].rpIndName.value=='Points of Contact1 Name'
+    #md.save(r'D:\test.xml')
+
+
+def test_append_container_to_list_invalid_type(md):
+    with pytest.raises(TypeError):
+        md.dataIdInfo.idCitation.citRespParty.append(md.dataIdInfo)
+
+
+def test_set_container(md):
+    c=md.dataIdInfo.idCitation.citRespParty[1]
+    md.dataIdInfo.idPoC.set(c)
+    assert md.dataIdInfo.idPoC.rpIndName.value=='Contact2 Name'
+    print(md.dataIdInfo.element.childNodes)
+    xxx
+    md.save(r'D:\test.xml')
