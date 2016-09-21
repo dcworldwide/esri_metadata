@@ -105,6 +105,10 @@ class List(Wrapper):
         self.parentElementWrapper.element.remove(e)
         del self.elements[i]
 
+    def __iter__(self):
+        for i in range(0,len(self.elements)):
+            yield self.__getitem__(i)
+
     def append(self,elementWrapper=None):
         if not self.is_bound: raise Exception('Cannot create on unbound Element')
         if self.parentElementWrapper.is_missing: self.parentElementWrapper.create()
@@ -182,6 +186,23 @@ class StringValue(ScalarValue):
         return str(v)
 
 
+class IntegerValue(ScalarValue):
+    def parse_value(self,v):
+        return int(v)
+
+    def format_value(self,v):
+        return str(v)
+
+
+class DateValue(ScalarValue):
+    def parse_value(self,v):
+        v=v.strip()
+        return datetime.datetime.strptime(v,'%Y%m%d') if v else None
+
+    def format_value(self,v):
+        return datetime.datetime.strftime(v,'%Y%m%d')
+
+
 class DateTimeValue(ScalarValue):
     def parse_value(self,v):
         v=v.strip()
@@ -210,6 +231,9 @@ class AttributeStringValue(AttributeScalarValue):
 
 
 
+# ========================================
+# Specific Classes
+# ========================================
 class Keywords(Container):
     def get_children(self):
         return {
@@ -223,6 +247,10 @@ class TpCat(Container):
             'TopicCatCd':Container({'value':AttributeStringValue(),}),
         }
 
+
+# ========================================
+# Contact Classes
+# ========================================
 class Contact(Container):
     def get_children(self):
         return {
@@ -249,7 +277,62 @@ class Contact(Container):
         }
 
 
+class PrcStep(Container):
+    def get_children(self):
+        return {
+            'stepDesc':StringValue(),
+            'stepProc':Contact(),
+        }
 
+
+
+# ========================================
+# Constraints Classes
+# ========================================
+class Consts(Container):
+    def get_children(self):
+        return {
+            'useLimit':List(StringValue),
+        }
+
+class RestrictCd(Container):
+    def get_children(self):
+        return {
+            'value':AttributeStringValue(),
+        }
+
+class LegConsts(Container):
+    def get_children(self):
+        return {
+            'accessConsts':List(RestrictCd),
+            'useConsts':List(RestrictCd),
+            'useLimit':List(StringValue),
+            'othConsts':List(StringValue),
+        }
+
+class SecConsts(Container):
+    def get_children(self):
+        return {
+            'useLimit':List(StringValue),
+            'userNote':StringValue(),
+            'classSys':StringValue(),
+            'handDesc':StringValue(),
+            'class':Container({'ClasscationCd':Container({'value':AttributeStringValue(),}),}),
+        }
+
+class Const(Container):
+    def get_children(self):
+        return {
+            'SecConsts':SecConsts(),
+            'LegConsts':LegConsts(),
+            'Consts':Consts(),
+        }
+
+
+
+# ========================================
+# Base Metadata Class
+# ========================================
 class Metadata(Container):
     def __init__(self,datasetPath):
         self.datasetPath=datasetPath
@@ -263,6 +346,8 @@ class Metadata(Container):
         return {
             'dataIdInfo':Container({
                 'idAbs':StringValue(),
+                'idCredit':StringValue(),
+                'idPurp':StringValue(),
                 'idCitation':Container({
                     'resTitle':StringValue(),
                     'resAltTitle':StringValue(),
@@ -274,7 +359,29 @@ class Metadata(Container):
                 'placeKeys':List(Keywords),
                 'searchKeys':List(Keywords),
                 'tpCat':List(TpCat),
+                'suppInfo':StringValue(),
+                'resConst':List(Const),
             }),
+            'dqInfo':Container({
+                'dataLineage':Container({
+                    'statement':StringValue(),
+                    'prcStep':List(PrcStep),
+                }),
+            }),
+            'Esri':Container({
+                'ModDate':DateValue(),
+                'scaleRange':Container({
+                    'minScale':IntegerValue(),
+                    'maxScale':IntegerValue(),
+                }),
+            }),
+            'Binary':Container({
+                'Thumbnail':Container({
+                    'Data':StringValue(),
+                }),
+            }),
+            'mdFileID':StringValue(),
+            'mdConst':List(Const),
         }
 
 
