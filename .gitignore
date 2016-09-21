@@ -11,5 +11,8 @@ __pycache__/
 /dist/
 /esri_metadata.egg-info/
 
+# test generated files
+/tests/data/temp.xml
+
 # work specific files
 /tests/data/connection.sde

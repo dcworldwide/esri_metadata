@@ -11,6 +11,10 @@ DATA_DIR=Path.cwd()/'tests'/'data'
 def md(request):
     return Metadata(str(DATA_DIR/'full_labelled.xml'))
 
+@pytest.fixture
+def temp_path(request):
+    return str(DATA_DIR/'temp.xml')
+
 
 # tests
 def test_load(md):
@@ -45,50 +49,38 @@ def test_separate_instances(md):
     assert firstContactNameWrapper.value=='Points of Contact1 Name'
 
 
-def test_change_value(md):
+def test_change_value(md,temp_path):
     md.dataIdInfo.idCitation.resTitle.value='Test'
     assert md.dataIdInfo.idCitation.resTitle.value=='Test'
-    md.save(md.datasetPath)
+    md.save(temp_path)
 
-    md=Metadata(md.datasetPath)
+    md=Metadata(temp_path)
     assert md.dataIdInfo.idCitation.resTitle.value=='Test'
 
-    md.dataIdInfo.idCitation.resTitle.value='Title'
-    md.save(md.datasetPath)
 
-
-def test_delete_list_item(md):
+def test_delete_list_item(md,temp_path):
     # make sure it's there, do the delete and make sure it's gone
     assert md.dataIdInfo.tpCat[1].TopicCatCd.value.value=='015'
     del md.dataIdInfo.tpCat[1]
     assert len(md.dataIdInfo.tpCat)==1
-    md.save(md.datasetPath)
+    md.save(temp_path)
 
     # reload the file and make sure it's still gone (ie. that it was persisted)
-    md=Metadata(md.datasetPath)
+    md=Metadata(temp_path)
     assert len(md.dataIdInfo.tpCat)==1
 
-    # then restore for subsequent tests
-    tpCat=md.dataIdInfo.tpCat.append()
-    tpCat.TopicCatCd.value.value='015'
-    md.save(md.datasetPath)
 
-
-def test_delete_container(md):
+def test_delete_container(md,temp_path):
     # make sure it's there, do the delete and make sure it's gone
     assert md.dataIdInfo.idCitation.resTitle.value=='Title'
     del md.dataIdInfo.idCitation.resTitle
     assert md.dataIdInfo.idCitation.resTitle.element is None
     assert md.dataIdInfo.idCitation.resTitle.is_missing
-    md.save(md.datasetPath)
+    md.save(temp_path)
 
     # reload the file and make sure it's still gone (ie. that it was persisted)
-    md=Metadata(md.datasetPath)
+    md=Metadata(temp_path)
     assert md.dataIdInfo.idCitation.resTitle.is_missing
-
-    # then restore for subsequent tests
-    md.dataIdInfo.idCitation.resTitle.value='Title'
-    md.save(md.datasetPath)
 
 
 def test_append_container_to_list(md):
@@ -101,7 +93,12 @@ def test_append_container_to_list_invalid_type(md):
         md.dataIdInfo.idCitation.citRespParty.append(md.dataIdInfo)
 
 
-def test_set_container(md):
+def test_set_container(md,temp_path):
     c=md.dataIdInfo.idCitation.citRespParty[1]
     md.dataIdInfo.idPoC.set(c)
+    assert md.dataIdInfo.idPoC.rpIndName.value=='Contact2 Name'
+    md.save(temp_path)
+
+    # reload the file and make sure it's still gone (ie. that it was persisted)
+    md=Metadata(temp_path)
     assert md.dataIdInfo.idPoC.rpIndName.value=='Contact2 Name'
