@@ -183,7 +183,7 @@ class StringValue(ScalarValue):
         return v
 
     def format_value(self,v):
-        return str(v)
+        return unicode(v)
 
 
 class IntegerValue(ScalarValue):
@@ -191,7 +191,7 @@ class IntegerValue(ScalarValue):
         return int(v)
 
     def format_value(self,v):
-        return str(v)
+        return unicode(v)
 
 
 class DateValue(ScalarValue):
@@ -227,7 +227,7 @@ class AttributeStringValue(AttributeScalarValue):
     def parse_value(self,v):
         return v
     def format_value(self,v):
-        return str(v)
+        return unicode(v)
 
 
 
