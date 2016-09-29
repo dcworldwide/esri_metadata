@@ -298,7 +298,7 @@ class Consts(Container):
 class RestrictCd(Container):
     def get_children(self):
         return {
-            'value':AttributeStringValue(),
+            'RestrictCd':Container({'value':AttributeStringValue(),}),
         }
 
 class LegConsts(Container):
