@@ -261,7 +261,7 @@ class Contact(Container):
             'role':Container({'RoleCd':Container({'value':AttributeStringValue(),}),}),
             'rpCntInfo':Container({
                 'cntAddress':Container({
-                    'eMailAdd':StringValue(),
+                    'eMailAdd':List(StringValue),
                     'addressType':AttributeStringValue(),
                     'delPoint':StringValue(),
                     'city':StringValue(),
@@ -270,8 +270,8 @@ class Contact(Container):
                     'country':StringValue(),
                 }),
                 'cntPhone':Container({
-                    'voiceNum':StringValue(),
-                    'faxNum':StringValue(),
+                    'voiceNum':List(StringValue),
+                    'faxNum':List(StringValue),
                 }),
             }),
         }

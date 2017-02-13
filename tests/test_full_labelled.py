@@ -28,7 +28,8 @@ def test_read(md):
     assert md.dataIdInfo.idPoC.rpIndName.value=='Points of Contact1 Name'
     assert md.dataIdInfo.idPoC.role.RoleCd.value.value=='007'
     assert md.dataIdInfo.idCitation.citRespParty[0].rpCntInfo.cntAddress.addressType.value=='postal'
-    assert md.dataIdInfo.idCitation.citRespParty[0].rpCntInfo.cntPhone.voiceNum.value=='07 1234 5678'
+    assert md.dataIdInfo.idCitation.citRespParty[0].rpCntInfo.cntAddress.eMailAdd[0].value=='Contact1 Email'
+    assert md.dataIdInfo.idCitation.citRespParty[0].rpCntInfo.cntPhone.voiceNum[0].value=='07 1234 5678'
 
 
 def test_missing_element(md):
