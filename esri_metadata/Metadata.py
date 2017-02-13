@@ -369,7 +369,10 @@ class Metadata(Container):
                 }),
             }),
             'Esri':Container({
+                'CreaDate':DateValue(),
+                # 'CreaTime':TimeValue(), # TODO
                 'ModDate':DateValue(),
+                'SyncDate':DateValue(),
                 'scaleRange':Container({
                     'minScale':IntegerValue(),
                     'maxScale':IntegerValue(),
@@ -382,6 +385,7 @@ class Metadata(Container):
             }),
             'mdFileID':StringValue(),
             'mdConst':List(Const),
+            'mdDateSt':DateValue(),# Metadata Details -> Last Update
         }
 
 
