@@ -234,11 +234,32 @@ class AttributeStringValue(AttributeScalarValue):
 # ========================================
 # Specific Classes
 # ========================================
+class DateTriple(Container):
+    def get_children(self):
+        return {
+            'pubDate':DateTimeValue(),
+            'createDate':DateTimeValue(),
+            'reviseDate':DateTimeValue(),
+        }
+
+
 class Keywords(Container):
     def get_children(self):
         return {
             'keyword':List(StringValue),
-            'thesaName':Container({'resTitle':StringValue(),}),
+            'thesaName':List(ThesaName),
+        }
+
+class ThesaName(Container):
+    def get_children(self):
+        return {
+            'resTitle':StringValue(),
+            'resAltTitle':StringValue(),
+            'collTitle':StringValue(),
+            'isbn':StringValue(),
+            'issn':StringValue(),
+            'date':DateTriple(),
+            'otherCitDet':StringValue(),
         }
 
 class TpCat(Container):
@@ -352,7 +373,7 @@ class Metadata(Container):
                     'resTitle':StringValue(),
                     'resAltTitle':StringValue(),
                     'citRespParty':List(Contact),
-                    'date':Container({'pubDate':DateTimeValue(),}),
+                    'date':DateTriple(),
                 }),
                 'idPoC':Contact(),
                 'themeKeys':List(Keywords),
