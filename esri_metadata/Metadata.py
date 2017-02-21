@@ -196,8 +196,7 @@ class IntegerValue(ScalarValue):
 
 class DateValue(ScalarValue):
     def parse_value(self,v):
-        v=v.strip()
-        return datetime.datetime.strptime(v,'%Y%m%d') if v else None
+        return datetime.datetime.strptime(v.strip(),'%Y%m%d') if v else None
 
     def format_value(self,v):
         return datetime.datetime.strftime(v,'%Y%m%d')
@@ -205,8 +204,7 @@ class DateValue(ScalarValue):
 
 class DateTimeValue(ScalarValue):
     def parse_value(self,v):
-        v=v.strip()
-        return datetime.datetime.strptime(v,'%Y-%m-%dT%H:%M:%S') if v else None
+        return datetime.datetime.strptime(v.strip(),'%Y-%m-%dT%H:%M:%S') if v else None
 
     def format_value(self,v):
         return datetime.datetime.strftime(v,'%Y-%m-%dT%H:%M:%S')
