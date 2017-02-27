@@ -441,5 +441,6 @@ class Metadata(Container):
 
     def bind(self):
         """Special case binding"""
-        self.element=self.tree.getroot()
+        root=self.tree.getroot()
+        self.element=root if root.tag==self.name else None
         self.parentElementWrapper=self
