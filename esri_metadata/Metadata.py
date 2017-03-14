@@ -9,6 +9,10 @@ import copy
 import xml.etree.ElementTree as ET
 
 
+class InvalidValueError(ValueError):
+    pass
+
+
 class Wrapper(object):
     def set_name(self,name):
         self.name=name
@@ -188,26 +192,38 @@ class StringValue(ScalarValue):
 
 class IntegerValue(ScalarValue):
     def parse_value(self,v):
-        return int(v)
+        try:
+            r=int(v)
+        except ValueError as e:
+            raise InvalidValueError('Invalid IntegerValue: {}'.format(v))
+        return r
 
     def format_value(self,v):
         return unicode(v)
 
 
-class DateValue(ScalarValue):
+class DateTimeValueBaseClass(ScalarValue):
+    FORMAT=''
+
     def parse_value(self,v):
-        return datetime.datetime.strptime(v.strip(),'%Y%m%d') if v else None
+        try:
+            r=datetime.datetime.strptime(v.strip(),self.FORMAT) if v else None
+        except ValueError as e:
+            raise InvalidValueError('Invalid {}: {}'.format(self.__class__.__name__,v))
+        return r
 
     def format_value(self,v):
         return datetime.datetime.strftime(v,'%Y%m%d')
 
 
-class DateTimeValue(ScalarValue):
-    def parse_value(self,v):
-        return datetime.datetime.strptime(v.strip(),'%Y-%m-%dT%H:%M:%S') if v else None
+class DateValue(DateTimeValueBaseClass):
+    FORMAT='%Y%m%d'
 
-    def format_value(self,v):
-        return datetime.datetime.strftime(v,'%Y-%m-%dT%H:%M:%S')
+class TimeValue(DateTimeValueBaseClass):
+    FORMAT='%H%M%S'
+
+class DateTimeValue(DateTimeValueBaseClass):
+    FORMAT='%Y-%m-%dT%H:%M:%S'
 
 
 class AttributeScalarValue(AttributeWrapper,SingleValue):
@@ -389,7 +405,7 @@ class Metadata(Container):
             }),
             'Esri':Container({
                 'CreaDate':DateValue(),
-                # 'CreaTime':TimeValue(), # TODO
+                'CreaTime':TimeValue(),
                 'ModDate':DateValue(),
                 'SyncDate':DateValue(),
                 'scaleRange':Container({
@@ -444,3 +460,7 @@ class Metadata(Container):
         root=self.tree.getroot()
         self.element=root if root.tag==self.name else None
         self.parentElementWrapper=self
+
+
+    # add references to exceptions here for easier error handling in client code
+    InvalidValueError=InvalidValueError
