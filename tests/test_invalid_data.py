@@ -24,3 +24,6 @@ def test_invalid_datetime(md):
 
 def test_invalid_int(md):
     with pytest.raises(Metadata.InvalidValueError): v=md.Esri.scaleRange.minScale.value
+
+def test_invalid_single_element(md):
+    with pytest.raises(Metadata.InvalidStructureError): v=md.dataIdInfo.idCredit

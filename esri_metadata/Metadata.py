@@ -10,6 +10,15 @@ import xml.etree.ElementTree as ET
 
 
 class InvalidValueError(ValueError):
+    """Raised when trying to parse a value that is invalid."""
+    pass
+
+class InvalidStructureError(Exception):
+    """Raised when the XML doesn't match what is expected."""
+    pass
+
+class UnboundElementError(Exception):
+    """Raised when a Wrapper instance is being used in a way that it needs to be bound to an XML object but it is not."""
     pass
 
 
@@ -34,7 +43,7 @@ class ElementWrapper(Wrapper):
             for e in self.parentElementWrapper.element:
                 if e.tag==self.name:
                     if self.element is not None:
-                        raise Exception('Multiple elements found when expecting one')
+                        raise InvalidStructureError('Multiple elements found when expecting one')
                     self.element=e
 
 
@@ -44,7 +53,7 @@ class ElementWrapper(Wrapper):
 
 
     def create(self):
-        if not self.is_bound: raise Exception('Cannot create on unbound Element')
+        if not self.is_bound: raise UnboundElementError('Cannot create on unbound Element')
         if self.is_missing:
             self.parentElementWrapper.create()
             e=ET.SubElement(self.parentElementWrapper.element,self.name)
@@ -74,7 +83,7 @@ class AttributeWrapper(Wrapper):
         return self.is_bound and (self.parentElementWrapper.is_missing or self.name not in self.parentElementWrapper.element.keys())
 
     def create(self):
-        if not self.is_bound: raise Exception('Cannot create on unbound Element')
+        if not self.is_bound: raise UnboundElementError('Cannot create on unbound Element')
         if self.is_missing:
             self.parentElementWrapper.create()
             self.parentElementWrapper.element.set(self.name,'')
@@ -114,7 +123,7 @@ class List(Wrapper):
             yield self.__getitem__(i)
 
     def append(self,elementWrapper=None):
-        if not self.is_bound: raise Exception('Cannot create on unbound Element')
+        if not self.is_bound: raise UnboundElementError('Cannot create on unbound Element')
         if self.parentElementWrapper.is_missing: self.parentElementWrapper.create()
         if elementWrapper is not None:
             if not isinstance(elementWrapper,self.itemType): raise TypeError('Cannot assign {} where {} is expected'.format(elementWrapper.__class__.__name__,self.itemType.__name__))
@@ -169,7 +178,7 @@ class ScalarValue(ElementWrapper,SingleValue):
         if self.element is None:
             return None
         elif len(self.element)>0:
-            raise Exception('Greater than one child node for type: {}'.format(self.__class__.__name__))
+            raise InvalidStructureError('Greater than one child node for type: {}'.format(self.__class__.__name__))
         v=self.element.text
         return self.parse_value(v)
 
@@ -213,7 +222,7 @@ class DateTimeValueBaseClass(ScalarValue):
         return r
 
     def format_value(self,v):
-        return datetime.datetime.strftime(v,'%Y%m%d')
+        return datetime.datetime.strftime(v,self.FORMAT)
 
 
 class DateValue(DateTimeValueBaseClass):
@@ -464,3 +473,5 @@ class Metadata(Container):
 
     # add references to exceptions here for easier error handling in client code
     InvalidValueError=InvalidValueError
+    InvalidStructureError=InvalidStructureError
+    UnboundElementError=UnboundElementError
