@@ -18,18 +18,18 @@ def temp_path(request):
 
 # tests
 def test_load(md):
-    assert md.dataIdInfo.idCitation.resTitle.value=='Title'
+    assert md.dataIdInfo.idCitation.resTitle.text.value=='Title'
 
 
 def test_read(md):
-    assert md.dataIdInfo.idAbs.value.find('Description')!=-1
-    assert md.dataIdInfo.idCitation.resTitle.value=='Title'
-    assert md.dataIdInfo.idCitation.date.pubDate.value==datetime.datetime(2016,9,1)
-    assert md.dataIdInfo.idPoC.rpIndName.value=='Points of Contact1 Name'
+    assert md.dataIdInfo.idAbs.text.value.find('Description')!=-1
+    assert md.dataIdInfo.idCitation.resTitle.text.value=='Title'
+    assert md.dataIdInfo.idCitation.date.pubDate.text.value==datetime.datetime(2016,9,1)
+    assert md.dataIdInfo.idPoC.rpIndName.text.value=='Points of Contact1 Name'
     assert md.dataIdInfo.idPoC.role.RoleCd.value.value=='007'
     assert md.dataIdInfo.idCitation.citRespParty[0].rpCntInfo.cntAddress.addressType.value=='postal'
-    assert md.dataIdInfo.idCitation.citRespParty[0].rpCntInfo.cntAddress.eMailAdd[0].value=='Contact1 Email'
-    assert md.dataIdInfo.idCitation.citRespParty[0].rpCntInfo.cntPhone.voiceNum[0].value=='07 1234 5678'
+    assert md.dataIdInfo.idCitation.citRespParty[0].rpCntInfo.cntAddress.eMailAdd[0].text.value=='Contact1 Email'
+    assert md.dataIdInfo.idCitation.citRespParty[0].rpCntInfo.cntPhone.voiceNum[0].text.value=='07 1234 5678'
 
 
 def test_missing_element(md):
@@ -39,24 +39,24 @@ def test_missing_element(md):
 
 def test_list(md):
     assert md.dataIdInfo.tpCat[0].TopicCatCd.value.value=='008'
-    assert md.dataIdInfo.searchKeys[0].keyword[0].value=='Tags'
+    assert md.dataIdInfo.searchKeys[0].keyword[0].text.value=='Tags'
 
 
 def test_separate_instances(md):
     # make sure the different contacts are fully creating children wrappers from scratch
     firstContactNameWrapper=md.dataIdInfo.idPoC.rpIndName
-    assert firstContactNameWrapper.value=='Points of Contact1 Name'
-    assert md.dataIdInfo.idCitation.citRespParty[0].rpIndName.value=='Contact1 Name'
-    assert firstContactNameWrapper.value=='Points of Contact1 Name'
+    assert firstContactNameWrapper.text.value=='Points of Contact1 Name'
+    assert md.dataIdInfo.idCitation.citRespParty[0].rpIndName.text.value=='Contact1 Name'
+    assert firstContactNameWrapper.text.value=='Points of Contact1 Name'
 
 
 def test_change_value(md,temp_path):
-    md.dataIdInfo.idCitation.resTitle.value='Test'
-    assert md.dataIdInfo.idCitation.resTitle.value=='Test'
+    md.dataIdInfo.idCitation.resTitle.text.value='Test'
+    assert md.dataIdInfo.idCitation.resTitle.text.value=='Test'
     md.save(temp_path)
 
     md=Metadata(temp_path)
-    assert md.dataIdInfo.idCitation.resTitle.value=='Test'
+    assert md.dataIdInfo.idCitation.resTitle.text.value=='Test'
 
 
 def test_delete_list_item(md,temp_path):
@@ -73,7 +73,7 @@ def test_delete_list_item(md,temp_path):
 
 def test_delete_container(md,temp_path):
     # make sure it's there, do the delete and make sure it's gone
-    assert md.dataIdInfo.idCitation.resTitle.value=='Title'
+    assert md.dataIdInfo.idCitation.resTitle.text.value=='Title'
     del md.dataIdInfo.idCitation.resTitle
     assert md.dataIdInfo.idCitation.resTitle.element is None
     assert md.dataIdInfo.idCitation.resTitle.is_missing
@@ -86,7 +86,7 @@ def test_delete_container(md,temp_path):
 
 def test_append_container_to_list(md):
     md.dataIdInfo.idCitation.citRespParty.append(md.dataIdInfo.idPoC)
-    assert md.dataIdInfo.idCitation.citRespParty[2].rpIndName.value=='Points of Contact1 Name'
+    assert md.dataIdInfo.idCitation.citRespParty[2].rpIndName.text.value=='Points of Contact1 Name'
 
 
 def test_append_container_to_list_invalid_type(md):
@@ -97,9 +97,9 @@ def test_append_container_to_list_invalid_type(md):
 def test_set_container(md,temp_path):
     c=md.dataIdInfo.idCitation.citRespParty[1]
     md.dataIdInfo.idPoC.set(c)
-    assert md.dataIdInfo.idPoC.rpIndName.value=='Contact2 Name'
+    assert md.dataIdInfo.idPoC.rpIndName.text.value=='Contact2 Name'
     md.save(temp_path)
 
     # reload the file and make sure it's still gone (ie. that it was persisted)
     md=Metadata(temp_path)
-    assert md.dataIdInfo.idPoC.rpIndName.value=='Contact2 Name'
+    assert md.dataIdInfo.idPoC.rpIndName.text.value=='Contact2 Name'

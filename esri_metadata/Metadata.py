@@ -74,6 +74,20 @@ class ElementWrapper(Wrapper):
         self.element=None
 
 
+class TextWrapper(Wrapper):
+    def bind(self,parentElementWrapper):
+        super(TextWrapper,self).bind(parentElementWrapper)
+
+    @property
+    def is_missing(self):
+        return self.is_bound and self.parentElementWrapper.is_missing
+
+    def create(self):
+        if not self.is_bound: raise UnboundElementError('Cannot create on unbound Element')
+        if self.is_missing:
+            self.parentElementWrapper.create()
+
+
 class AttributeWrapper(Wrapper):
     def bind(self,parentElementWrapper):
         super(AttributeWrapper,self).bind(parentElementWrapper)
@@ -172,23 +186,24 @@ class SingleValue(object):
         raise NotImplemented()
 
 
-class ScalarValue(ElementWrapper,SingleValue):
+class ScalarValue(TextWrapper,SingleValue):
     @property
     def value(self):
-        if self.element is None:
+        if self.parentElementWrapper.is_missing:
             return None
-        elif len(self.element)>0:
+        elif len(self.parentElementWrapper.element)>0:
             raise InvalidStructureError('Greater than one child node for type: {}'.format(self.__class__.__name__))
-        v=self.element.text
+        v=self.parentElementWrapper.element.text
         return self.parse_value(v)
 
     @value.setter
     def value(self,v):
-        self.create()
-        self.element.text=self.format_value(v)
+        self.parentElementWrapper.create()
+        e=self.parentElementWrapper.element
+        e.text=self.format_value(v)
         # just remove any child elements in case, because this is supposed to be a scalar value
-        for n in self.element:
-            self.element.remove(n)
+        for n in e:
+            e.remove(n)
 
 
 class StringValue(ScalarValue):
@@ -197,6 +212,10 @@ class StringValue(ScalarValue):
 
     def format_value(self,v):
         return unicode(v)
+
+class StringValueContainer(Container):
+    def get_children(self):
+        return {'text':StringValue()}
 
 
 class IntegerValue(ScalarValue):
@@ -290,29 +309,29 @@ class AttributeStringValue(AttributeScalarValue):
 class DateTriple(Container):
     def get_children(self):
         return {
-            'pubDate':DateTimeValue(),
-            'createDate':DateTimeValue(),
-            'reviseDate':DateTimeValue(),
+            'pubDate':Container({'text':DateTimeValue(),}),
+            'createDate':Container({'text':DateTimeValue(),}),
+            'reviseDate':Container({'text':DateTimeValue(),}),
         }
 
 
 class Keywords(Container):
     def get_children(self):
         return {
-            'keyword':List(StringValue),
+            'keyword':List(StringValueContainer),
             'thesaName':List(ThesaName),
         }
 
 class ThesaName(Container):
     def get_children(self):
         return {
-            'resTitle':StringValue(),
-            'resAltTitle':StringValue(),
-            'collTitle':StringValue(),
-            'isbn':StringValue(),
-            'issn':StringValue(),
+            'resTitle':StringValueContainer(),
+            'resAltTitle':StringValueContainer(),
+            'collTitle':StringValueContainer(),
+            'isbn':StringValueContainer(),
+            'issn':StringValueContainer(),
             'date':DateTriple(),
-            'otherCitDet':StringValue(),
+            'otherCitDet':StringValueContainer(),
         }
 
 class TpCat(Container):
@@ -328,24 +347,24 @@ class TpCat(Container):
 class Contact(Container):
     def get_children(self):
         return {
-            'displayName':StringValue(),# similar to rpIndName but not always populated
-            'rpIndName':StringValue(),
-            'rpOrgName':StringValue(),
-            'rpPosName':StringValue(),
+            'displayName':StringValueContainer(),# similar to rpIndName but not always populated
+            'rpIndName':StringValueContainer(),
+            'rpOrgName':StringValueContainer(),
+            'rpPosName':StringValueContainer(),
             'role':Container({'RoleCd':Container({'value':AttributeStringValue(),}),}),
             'rpCntInfo':Container({
                 'cntAddress':Container({
-                    'eMailAdd':List(StringValue),
+                    'eMailAdd':List(StringValueContainer),
                     'addressType':AttributeStringValue(),
-                    'delPoint':StringValue(),
-                    'city':StringValue(),
-                    'state':StringValue(),
-                    'postCode':StringValue(),
-                    'country':StringValue(),
+                    'delPoint':StringValueContainer(),
+                    'city':StringValueContainer(),
+                    'state':StringValueContainer(),
+                    'postCode':StringValueContainer(),
+                    'country':StringValueContainer(),
                 }),
                 'cntPhone':Container({
-                    'voiceNum':List(StringValue),
-                    'faxNum':List(StringValue),
+                    'voiceNum':List(StringValueContainer),
+                    'faxNum':List(StringValueContainer),
                 }),
             }),
         }
@@ -354,7 +373,7 @@ class Contact(Container):
 class PrcStep(Container):
     def get_children(self):
         return {
-            'stepDesc':StringValue(),
+            'stepDesc':StringValueContainer(),
             'stepProc':Contact(),
         }
 
@@ -366,7 +385,7 @@ class PrcStep(Container):
 class Consts(Container):
     def get_children(self):
         return {
-            'useLimit':List(StringValue),
+            'useLimit':List(StringValueContainer),
         }
 
 class RestrictCd(Container):
@@ -380,17 +399,17 @@ class LegConsts(Container):
         return {
             'accessConsts':List(RestrictCd),
             'useConsts':List(RestrictCd),
-            'useLimit':List(StringValue),
-            'othConsts':List(StringValue),
+            'useLimit':List(StringValueContainer),
+            'othConsts':List(StringValueContainer),
         }
 
 class SecConsts(Container):
     def get_children(self):
         return {
-            'useLimit':List(StringValue),
-            'userNote':StringValue(),
-            'classSys':StringValue(),
-            'handDesc':StringValue(),
+            'useLimit':List(StringValueContainer),
+            'userNote':StringValueContainer(),
+            'classSys':StringValueContainer(),
+            'handDesc':StringValueContainer(),
             'class':Container({'ClasscationCd':Container({'value':AttributeStringValue(),}),}),
         }
 
@@ -416,7 +435,7 @@ class AggrInfo(Container):
 class AggrDsIdent(Container):
     def get_children(self):
         return {
-            'identCode':StringValue(),
+            'identCode':StringValueContainer(),
         }
 
 
@@ -431,9 +450,9 @@ class Report(Container):
         return {
             'type':AttributeStringValue(),
             'dimension':AttributeStringValue(),
-            'measDesc':StringValue(),
-            'evalMethDesc':StringValue(),
-            'measResult':Container({'ConResult':Container({'conExpl':StringValue()})}),
+            'measDesc':StringValueContainer(),
+            'evalMethDesc':StringValueContainer(),
+            'measResult':Container({'ConResult':Container({'conExpl':StringValueContainer()})}),
         }
 
 
@@ -442,8 +461,8 @@ class AxisDimension(Container):
         # <axisDimension type="001"(Row-y)[]><dimSize>222</dimSize><dimResol><value uom="m">123</value></dimResol></axisDimension>
         return {
             'type':AttributeStringValue(),
-            'dimSize':IntegerValue(),
-            'dimResol':Container({'value':IntegerValue()}),# TODO: uom attribute is a string value too
+            'dimSize':Container({'text':IntegerValue(),}),
+            'dimResol':Container({'value':Container({'uom':AttributeStringValue(),'text':IntegerValue(),}),}),# TODO: test uom attribute is a string value too
         }
 
 
@@ -451,9 +470,9 @@ class GridSpatRep(Container):
     def get_children(self):
         # <GridSpatRep><numDims>2</numDims><axisDimension type="001"(Row-y)[]><dimSize>222</dimSize><dimResol><value uom="m">123</value></dimResol></axisDimension><tranParaAv>False</tranParaAv><axisDimension type="002"(Column-x)><dimSize>233</dimSize><dimResol><value uom="[in_i]">321</value></dimResol></axisDimension></GridSpatRep>
         return {
-            'numDims':IntegerValue(),
+            'numDims':Container({'text':IntegerValue(),}),
             'axisDimension':List(AxisDimension),
-            'tranParaAv':BooleanValueTitleCase(),
+            'tranParaAv':Container({'text':BooleanValueTitleCase(),}),
         }
 
 class Georect(Container):
@@ -461,9 +480,9 @@ class Georect(Container):
         # <Georect><numDims>2</numDims><axisDimension type="001"(Row-y)[]><dimSize>222</dimSize><dimResol><value uom="m">123</value></dimResol></axisDimension><tranParaAv>False</tranParaAv><axisDimension type="002"(Column-x)><dimSize>233</dimSize><dimResol><value uom="[in_i]">321</value></dimResol></axisDimension></Georect>
         # this is different to GridSpatRep in some of the fields that haven't been fleshed out here
         return {
-            'numDims':IntegerValue(),
+            'numDims':Container({'text':IntegerValue(),}),
             'axisDimension':List(AxisDimension),
-            'tranParaAv':BooleanValueTitleCase(),
+            'tranParaAv':Container({'text':BooleanValueTitleCase(),}),
         }
 
 
@@ -492,12 +511,12 @@ class Metadata(Container):
     def get_children(self):
         return {
             'dataIdInfo':Container({
-                'idAbs':StringValue(),
-                'idCredit':StringValue(),
-                'idPurp':StringValue(),
+                'idAbs':StringValueContainer(),
+                'idCredit':StringValueContainer(),
+                'idPurp':StringValueContainer(),
                 'idCitation':Container({
-                    'resTitle':StringValue(),
-                    'resAltTitle':StringValue(),
+                    'resTitle':StringValueContainer(),
+                    'resAltTitle':StringValueContainer(),
                     'citRespParty':List(Contact),
                     'date':DateTriple(),
                 }),
@@ -506,7 +525,7 @@ class Metadata(Container):
                 'placeKeys':List(Keywords),# 7
                 'searchKeys':List(Keywords),
                 'tpCat':List(TpCat),
-                'suppInfo':StringValue(),
+                'suppInfo':StringValueContainer(),
                 'resConst':List(Const),
                 'aggrInfo':List(AggrInfo), # <aggrInfo[]><aggrDSIdent><identCode>blah
                 'spatRpType':List(SpatRpType), # <spatRpType[]><SpatRepTypCd Sync="FALSE" value="002"/></spatRpType>, 001=Vector, 002=Grid
@@ -516,31 +535,31 @@ class Metadata(Container):
             }),
             'dqInfo':Container({
                 'dataLineage':Container({
-                    'statement':StringValue(),
+                    'statement':StringValueContainer(),
                     'prcStep':List(PrcStep),
                 }),
                 'report':List(Report), # <report type="DQCompOm" dimension=""><measDesc>measureDesc</measDesc><evalMethDesc>evalDesc</evalMethDesc><measResult><ConResult><conExpl>explan</conExpl></ConResult></measResult></report><report type="DQConcConsis" dimension=""/><report type="DQAbsExtPosAcc" dimension=""/><report type="DQQuanAttAcc" dimension=""/><report type="DQNonQuanAttAcc" dimension=""/> Quan or Qual?
             }),
             'spatRepInfo':List(SpatRepInfo),
             'Esri':Container({
-                'CreaDate':DateValue(),
-                'CreaTime':TimeValue(),
-                'ModDate':DateValue(),
-                'ModTime':TimeValue(),
-                'SyncDate':DateValue(),
+                'CreaDate':Container({'text':DateValue(),}),
+                'CreaTime':Container({'text':TimeValue(),}),
+                'ModDate':Container({'text':DateValue(),}),
+                'ModTime':Container({'text':TimeValue(),}),
+                'SyncDate':Container({'text':DateValue(),}),
                 'scaleRange':Container({
-                    'minScale':IntegerValue(),
-                    'maxScale':IntegerValue(),
+                    'minScale':Container({'text':IntegerValue(),}),
+                    'maxScale':Container({'text':IntegerValue(),}),
                 }),
             }),
             'Binary':Container({
                 'Thumbnail':Container({
-                    'Data':StringValue(),
+                    'Data':StringValueContainer(),
                 }),
             }),
-            'mdFileID':StringValue(),
+            'mdFileID':StringValueContainer(),
             'mdConst':List(Const),
-            'mdDateSt':DateValue(),# Metadata Details -> Last Update
+            'mdDateSt':Container({'text':DateValue(),}),# Metadata Details -> Last Update
         }
 
 
