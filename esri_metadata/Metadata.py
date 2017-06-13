@@ -347,7 +347,7 @@ class TpCat(Container):
 class Contact(Container):
     def get_children(self):
         return {
-            'displayName':StringValueContainer(),# similar to rpIndName but not always populated
+            'displayName':StringValueContainer(), # similar to rpIndName but not always populated
             'rpIndName':StringValueContainer(),
             'rpOrgName':StringValueContainer(),
             'rpPosName':StringValueContainer(),
@@ -429,7 +429,7 @@ class AggrInfo(Container):
     def get_children(self):
         return {
             'aggrDSIdent':AggrDsIdent(),
-            'assocType':Container({'AscTypeCd':Container({'value':AttributeStringValue(),}),}),# value: 004=Source
+            'assocType':Container({'AscTypeCd':Container({'value':AttributeStringValue(),}),}), # value: 004=Source
         }
 
 class AggrDsIdent(Container):
@@ -442,13 +442,13 @@ class AggrDsIdent(Container):
 class SpatRpType(Container):
     def get_children(self):
         return {
-            'SpatRepTypCd':Container({'value':AttributeStringValue(),}),# value: 001=Vector, 002=Grid
+            'SpatRepTypCd':Container({'value':AttributeStringValue(),}), # value: 001=Vector, 002=Grid
         }
 
 class Report(Container):
     def get_children(self):
         return {
-            'type':AttributeStringValue(),
+            'type':AttributeStringValue(), # DQNonQuanAttAcc: Quan or Qual?
             'dimension':AttributeStringValue(),
             'measDesc':StringValueContainer(),
             'evalMethDesc':StringValueContainer(),
@@ -458,17 +458,15 @@ class Report(Container):
 
 class AxisDimension(Container):
     def get_children(self):
-        # <axisDimension type="001"(Row-y)[]><dimSize>222</dimSize><dimResol><value uom="m">123</value></dimResol></axisDimension>
         return {
-            'type':AttributeStringValue(),
+            'type':AttributeStringValue(), # 001=Row-y, 002=Column-x
             'dimSize':Container({'text':IntegerValue(),}),
-            'dimResol':Container({'value':Container({'uom':AttributeStringValue(),'text':IntegerValue(),}),}),# TODO: test uom attribute is a string value too
+            'dimResol':Container({'value':Container({'uom':AttributeStringValue(),'text':IntegerValue(),}),}),
         }
 
 
 class GridSpatRep(Container):
     def get_children(self):
-        # <GridSpatRep><numDims>2</numDims><axisDimension type="001"(Row-y)[]><dimSize>222</dimSize><dimResol><value uom="m">123</value></dimResol></axisDimension><tranParaAv>False</tranParaAv><axisDimension type="002"(Column-x)><dimSize>233</dimSize><dimResol><value uom="[in_i]">321</value></dimResol></axisDimension></GridSpatRep>
         return {
             'numDims':Container({'text':IntegerValue(),}),
             'axisDimension':List(AxisDimension),
@@ -477,7 +475,6 @@ class GridSpatRep(Container):
 
 class Georect(Container):
     def get_children(self):
-        # <Georect><numDims>2</numDims><axisDimension type="001"(Row-y)[]><dimSize>222</dimSize><dimResol><value uom="m">123</value></dimResol></axisDimension><tranParaAv>False</tranParaAv><axisDimension type="002"(Column-x)><dimSize>233</dimSize><dimResol><value uom="[in_i]">321</value></dimResol></axisDimension></Georect>
         # this is different to GridSpatRep in some of the fields that haven't been fleshed out here
         return {
             'numDims':Container({'text':IntegerValue(),}),
@@ -488,7 +485,7 @@ class Georect(Container):
 
 class SpatRepInfo(Container):
     def get_children(self):
-        return { # <spatRepInfo[]></spatRepInfo>
+        return {
             'GridSpatRep':GridSpatRep(),
             'VectSpatRep':Container({}),
             'Georect':Georect(),
@@ -522,14 +519,14 @@ class Metadata(Container):
                 }),
                 'idPoC':Contact(),
                 'themeKeys':List(Keywords),
-                'placeKeys':List(Keywords),# 7
+                'placeKeys':List(Keywords),
                 'searchKeys':List(Keywords),
                 'tpCat':List(TpCat),
                 'suppInfo':StringValueContainer(),
                 'resConst':List(Const),
-                'aggrInfo':List(AggrInfo), # <aggrInfo[]><aggrDSIdent><identCode>blah
-                'spatRpType':List(SpatRpType), # <spatRpType[]><SpatRepTypCd Sync="FALSE" value="002"/></spatRpType>, 001=Vector, 002=Grid
-                'resMaint':Container({ # resMaint><maintCont><rpIndName>Contact name</rpIndName><rpOrgName>org</rpOrgName><rpPosName>pos</rpPosName><role><RoleCd value="001"/></role></maintCont></resMaint>
+                'aggrInfo':List(AggrInfo),
+                'spatRpType':List(SpatRpType),
+                'resMaint':Container({
                     'maintCont':List(Contact),
                 }),
             }),
@@ -538,7 +535,7 @@ class Metadata(Container):
                     'statement':StringValueContainer(),
                     'prcStep':List(PrcStep),
                 }),
-                'report':List(Report), # <report type="DQCompOm" dimension=""><measDesc>measureDesc</measDesc><evalMethDesc>evalDesc</evalMethDesc><measResult><ConResult><conExpl>explan</conExpl></ConResult></measResult></report><report type="DQConcConsis" dimension=""/><report type="DQAbsExtPosAcc" dimension=""/><report type="DQQuanAttAcc" dimension=""/><report type="DQNonQuanAttAcc" dimension=""/> Quan or Qual?
+                'report':List(Report),
             }),
             'spatRepInfo':List(SpatRepInfo),
             'Esri':Container({
@@ -559,7 +556,7 @@ class Metadata(Container):
             }),
             'mdFileID':StringValueContainer(),
             'mdConst':List(Const),
-            'mdDateSt':Container({'text':DateValue(),}),# Metadata Details -> Last Update
+            'mdDateSt':Container({'text':DateValue(),}), # Metadata Details -> Last Update
         }
 
 
