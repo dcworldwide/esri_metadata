@@ -506,6 +506,51 @@ class SpatRepInfo(Container):
 
 
 
+# Fields
+class Detailed(Container):
+    def get_children(self):
+        return {
+            'Name':AttributeStringValue(),
+            'enttyp':Container({
+                'enttypl':StringValueContainer(),
+                'enttypt':StringValueContainer(),
+                'enttypc':StringValueContainer(),
+            }),
+            'attr':List(Attr),
+        }
+
+class Attr(Container):
+    def get_children(self):
+        return {
+            'attrlabl':StringValueContainer,
+            'attrdomv':List(Attrdomv),
+        }
+
+class Attrdomv(Container):
+    def get_children(self):
+        return {
+            'edom':List(Edom),
+            'udom':StringValueContainer(),
+            'rdom':Container({
+                'rdommin':StringValueContainer(),
+                'rdommax':StringValueContainer(),
+            }),
+            'codesetd':Container({
+                'codesetn':StringValueContainer(),
+                'codesets':StringValueContainer(),
+            }),
+        }
+
+class Edom(Container):
+    def get_children(self):
+        return {
+            'edomv':StringValueContainer(),
+            'edomvd':StringValueContainer(),
+            'edomvds':StringValueContainer(),
+        }
+
+
+
 # ========================================
 # Base Metadata Class
 # ========================================
@@ -549,6 +594,9 @@ class Metadata(Container):
                     'prcStep':List(PrcStep),
                 }),
                 'report':List(Report),
+            }),
+            'eainfo':Container({
+                'detailed':List(Detailed),
             }),
             'spatRepInfo':List(SpatRepInfo),
             'Esri':Container({
