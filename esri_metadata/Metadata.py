@@ -49,7 +49,11 @@ class ElementWrapper(Wrapper):
 
     @property
     def is_missing(self):
-        return self.is_bound and self.element is None
+        return not self.is_present
+
+    @property
+    def is_present(self):
+        return self.is_bound and self.element is not None
 
 
     def create(self):
@@ -114,6 +118,15 @@ class List(Wrapper):
             for e in self.parentElementWrapper.element:
                 if e.tag==self.name:
                     self.elements.append(e)
+
+
+    @property
+    def is_missing(self):
+        return not self.is_present
+
+    @property
+    def is_present(self):
+        return self.is_bound and len(self)>0
 
 
     def __len__(self):
