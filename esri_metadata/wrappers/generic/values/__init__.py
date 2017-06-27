@@ -12,7 +12,7 @@ from .TextContainer import TextContainer
 from .TextStringValues import TextStringValue,TextStringValueContainer
 from .TextIntegerValues import TextIntegerValue,TextIntegerValueContainer
 from .TextDateTimeValues import TextDateValue,TextTimeValue,TextDateTimeValue,TextDateValueContainer,TextTimeValueContainer,TextDateTimeValueContainer
-from .TextBooleanValues import TextBooleanTitleCaseValue
+from .TextBooleanValues import TextBooleanTitleCaseValue,TextBooleanTitleCaseValueContainer
 
 # attribute wrappers
 from .AttributeScalarValue import AttributeScalarValue

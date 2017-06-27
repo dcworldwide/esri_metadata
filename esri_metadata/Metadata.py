@@ -169,25 +169,25 @@ class AxisDimension(Container):
         return {
             'type':AttributeStringValue(), # 001=Row-y, 002=Column-x
             'dimSize':Container({'text':IntegerValue(),}),
-            'dimResol':Container({'value':Container({'uom':AttributeStringValue(),'text':IntegerValue(),}),}),
+            'dimResol':Container({'value':Container({'uom':AttributeStringValue(),'text':TextIntegerValue(),}),}),
         }
 
 
 class GridSpatRep(Container):
     def get_children(self):
         return {
-            'numDims':IntegerValueContainer(),
+            'numDims':TextIntegerValueContainer(),
             'axisDimension':List(AxisDimension),
-            'tranParaAv':BooleanValueTitleCaseContainer(),
+            'tranParaAv':TextBooleanTitleCaseValueContainer(),
         }
 
 class Georect(Container):
     def get_children(self):
         # this is different to GridSpatRep in some of the fields that haven't been fleshed out here
         return {
-            'numDims':IntegerValueContainer(),
+            'numDims':TextIntegerValueContainer(),
             'axisDimension':List(AxisDimension),
-            'tranParaAv':BooleanValueTitleCaseContainer(),
+            'tranParaAv':TextBooleanTitleCaseValueContainer(),
         }
 
 
@@ -217,7 +217,7 @@ class Detailed(Container):
 class Attr(Container):
     def get_children(self):
         return {
-            'attrlabl':TextStringValueContainer,
+            'attrlabl':TextStringValueContainer(),
             'attrdomv':List(Attrdomv),
         }
 
