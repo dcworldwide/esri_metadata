@@ -1,3 +1,3 @@
-__version__   = "0.1.2"
+__version__   = "0.1.3"
 __author__    = "Adam Kerz"
 __copyright__ = "Copyright (C) 2016-2017 Adam Kerz"
