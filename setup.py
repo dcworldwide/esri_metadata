@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup,find_packages
 
 
 with open('esri_metadata/version.py') as fin: exec(fin.read())
@@ -8,7 +8,7 @@ setup(
     name='esri_metadata',
     version=__version__,
 
-    packages=['esri_metadata'],
+    packages=find_packages(exclude=['tests*']),
 
     # PyPI MetaData
     author='Adam Kerz',
