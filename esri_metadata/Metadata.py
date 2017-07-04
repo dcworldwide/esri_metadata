@@ -168,7 +168,7 @@ class AxisDimension(Container):
     def get_children(self):
         return {
             'type':AttributeStringValue(), # 001=Row-y, 002=Column-x
-            'dimSize':Container({'text':IntegerValue(),}),
+            'dimSize':TextIntegerValueContainer(),
             'dimResol':Container({'value':Container({'uom':AttributeStringValue(),'text':TextIntegerValue(),}),}),
         }
 
