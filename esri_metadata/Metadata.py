@@ -356,7 +356,7 @@ class Metadata(Container):
 
     def release(self):
         """Releases the xml objects to free up memory"""
-        self.element.clear()
+        if self.element: self.element.clear()
 
 
     # add references to exceptions here for easier error handling in client code
